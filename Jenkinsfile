@@ -81,11 +81,13 @@ pipeline {
 
         stage('Configure EKS Kubeconfig') {
             steps {
-                withEnv(["AWS_DEFAULT_REGION=ap-south-1"]) {
-                    sh '''
-                        aws eks update-kubeconfig --region ap-south-1 --name gtr-cluster
-                        kubectl get nodes
-                    '''
+                withCredentials([usernamePassword(credentialsId: 'aws-cred', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+                    withEnv(["AWS_DEFAULT_REGION=ap-south-1"]) {
+                        sh '''
+                            aws eks update-kubeconfig --region ap-south-1 --name gtr-cluster
+                            kubectl get nodes
+                        '''
+                    }
                 }
             }
         }
