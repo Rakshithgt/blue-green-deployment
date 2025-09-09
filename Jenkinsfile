@@ -80,17 +80,20 @@ pipeline {
         }
 
         stage('Configure EKS Kubeconfig') {
-            steps {
-                withCredentials([usernamePassword(credentialsId: 'aws-cred', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
-                    withEnv(["AWS_DEFAULT_REGION=ap-south-1"]) {
-                        sh '''
-                            aws eks update-kubeconfig --region ap-south-1 --name gtr-cluster
-                            kubectl get nodes
-                        '''
-                    }
-                }
-            }
-        }
+           steps {
+             withCredentials([usernamePassword(credentialsId: 'aws-cred', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+                 withEnv(["AWS_DEFAULT_REGION=ap-south-1"]) {
+                    sh '''
+                       echo "AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID"
+                       echo "AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY"
+                       aws eks update-kubeconfig --region ap-south-1 --name gtr-cluster
+                       kubectl get nodes
+                    '''
+                 }
+              }
+          }
+       }
+
 
         stage('Deploy MySQL Deployment and Service') {
             steps {
