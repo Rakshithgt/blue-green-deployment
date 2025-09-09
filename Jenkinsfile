@@ -45,7 +45,7 @@ pipeline {
                         ${SCANNER_HOME}/bin/sonar-scanner \
                             -Dsonar.projectKey=nodejsmysql \
                             -Dsonar.projectName=nodejsmysql \
-                            -Dsonar.sources= .\
+                            -Dsonar.sources=. \
                             -X
                     """
 
