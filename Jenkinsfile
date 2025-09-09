@@ -41,7 +41,14 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv('sonar') {
-                    sh "${SCANNER_HOME}/bin/sonar-scanner -Dsonar.projectKey=nodejsmysql -Dsonar.projectName=nodejsmysql"
+                    sh """
+                        ${SCANNER_HOME}/bin/sonar-scanner \
+                            -Dsonar.projectKey=nodejsmysql \
+                            -Dsonar.projectName=nodejsmysql \
+                            -Dsonar.sources= .\
+                            -X
+                    """
+
                 }
             }
         }
