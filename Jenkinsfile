@@ -15,6 +15,10 @@ pipeline {
         KUBE_NAMESPACES = 'webapps'
     }
 
+    tools {
+        maven 'maven3'
+    }
+
     stages {
         stage('Git Checkout') {
             steps {
