@@ -19,7 +19,6 @@ pipeline {
     }
 
     stages {
-
         stage('Git Checkout') {
             steps {
                 git branch: 'main', credentialsId: 'git-token', url: 'https://github.com/Rakshithgt/blue-green-deployment.git'
@@ -80,41 +79,33 @@ pipeline {
             }
         }
 
+        stage('Configure EKS Kubeconfig') {
+            steps {
+                withEnv(["AWS_DEFAULT_REGION=ap-south-1"]) {
+                    sh '''
+                        aws eks update-kubeconfig --region ap-south-1 --name gtr-cluster
+                        kubectl get nodes
+                    '''
+                }
+            }
+        }
+
         stage('Deploy MySQL Deployment and Service') {
             steps {
-                script {
-                    withKubeConfig(
-                        credentialsId: 'k8-token',
-                        clusterName: 'gtr-cluster',
-                        namespace: "${KUBE_NAMESPACE}",
-                        serverUrl: 'https://7BE9B326E0B0EB9D25FECC4D0849A289.gr7.ap-south-1.eks.amazonaws.com'
-                    ) {
-                        sh """
-                           kubectl get nodes
-                           kubectl apply -f mysql-ds.yml -n ${KUBE_NAMESPACE}
-                        """
-
-                    }
-                }
+                sh """
+                   kubectl get nodes
+                   kubectl apply -f mysql-ds.yml -n ${KUBE_NAMESPACE}
+                """
             }
         }
 
         stage('Deploy SVC-APP') {
             steps {
-                script {
-                    withKubeConfig(
-                        credentialsId: 'k8-token',
-                        clusterName: 'gtr-cluster',
-                        namespace: "${KUBE_NAMESPACE}",
-                        serverUrl: 'https://7BE9B326E0B0EB9D25FECC4D0849A289.gr7.ap-south-1.eks.amazonaws.com'
-                    ) {
-                        sh """
-                            if ! kubectl get svc bankapp-service -n ${KUBE_NAMESPACE}; then
-                                kubectl apply -f bankapp-service.yml -n ${KUBE_NAMESPACE}
-                            fi
-                        """
-                    }
-                }
+                sh """
+                    if ! kubectl get svc bankapp-service -n ${KUBE_NAMESPACE}; then
+                        kubectl apply -f bankapp-service.yml -n ${KUBE_NAMESPACE}
+                    fi
+                """
             }
         }
 
@@ -122,14 +113,7 @@ pipeline {
             steps {
                 script {
                     def deploymentFile = params.DEPLOY_ENV == 'blue' ? 'app-deployment-blue.yml' : 'app-deployment-green.yml'
-                    withKubeConfig(
-                        credentialsId: 'k8-token',
-                        clusterName: 'gtr-cluster',
-                        namespace: "${KUBE_NAMESPACE}",
-                        serverUrl: 'https://7BE9B326E0B0EB9D25FECC4D0849A289.gr7.ap-south-1.eks.amazonaws.com'
-                    ) {
-                        sh "kubectl apply -f ${deploymentFile} -n ${KUBE_NAMESPACE}"
-                    }
+                    sh "kubectl apply -f ${deploymentFile} -n ${KUBE_NAMESPACE}"
                 }
             }
         }
@@ -141,16 +125,9 @@ pipeline {
             steps {
                 script {
                     def newEnv = params.DEPLOY_ENV
-                    withKubeConfig(
-                        credentialsId: 'k8-token',
-                        clusterName: 'gtr-cluster',
-                        namespace: "${KUBE_NAMESPACE}",
-                        serverUrl: 'https://7BE9B326E0B0EB9D25FECC4D0849A289.gr7.ap-south-1.eks.amazonaws.com'
-                    ) {
-                        sh """
-                            kubectl patch service bankapp-service -p '{"spec": {"selector": {"app": "bankapp", "version": "${newEnv}"}}}' -n ${KUBE_NAMESPACE}
-                        """
-                    }
+                    sh """
+                        kubectl patch service bankapp-service -p '{"spec": {"selector": {"app": "bankapp", "version": "${newEnv}"}}}' -n ${KUBE_NAMESPACE}
+                    """
                     echo "✅ Traffic has been switched to the '${newEnv}' environment."
                 }
             }
@@ -160,17 +137,10 @@ pipeline {
             steps {
                 script {
                     def verifyEnv = params.DEPLOY_ENV
-                    withKubeConfig(
-                        credentialsId: 'k8-token',
-                        clusterName: 'gtr-cluster',
-                        namespace: "${KUBE_NAMESPACE}",
-                        serverUrl: 'https://7BE9B326E0B0EB9D25FECC4D0849A289.gr7.ap-south-1.eks.amazonaws.com'
-                    ) {
-                        sh """
-                            kubectl get pods -l version=${verifyEnv} -n ${KUBE_NAMESPACE}
-                            kubectl get svc bankapp-service -n ${KUBE_NAMESPACE}
-                        """
-                    }
+                    sh """
+                        kubectl get pods -l version=${verifyEnv} -n ${KUBE_NAMESPACE}
+                        kubectl get svc bankapp-service -n ${KUBE_NAMESPACE}
+                    """
                 }
             }
         }
