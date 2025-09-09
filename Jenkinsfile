@@ -89,7 +89,11 @@ pipeline {
                         namespace: "${KUBE_NAMESPACE}",
                         serverUrl: 'https://7BE9B326E0B0EB9D25FECC4D0849A289.gr7.ap-south-1.eks.amazonaws.com'
                     ) {
-                        sh "kubectl apply -f mysql-ds.yml -n ${KUBE_NAMESPACE}"
+                        sh """
+                           kubectl get nodes
+                           kubectl apply -f mysql-ds.yml -n ${KUBE_NAMESPACE}
+                        """
+
                     }
                 }
             }
