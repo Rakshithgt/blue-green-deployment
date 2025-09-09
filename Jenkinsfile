@@ -87,7 +87,7 @@ pipeline {
                         credentialsId: 'k8-token',
                         clusterName: 'gtr-cluster',
                         namespace: "${KUBE_NAMESPACE}",
-                        serverUrl: 'https://46743932FDE6B34C74566F392E30CABA.gr7.ap-south-1.eks.amazonaws.com'
+                        serverUrl: 'https://7BE9B326E0B0EB9D25FECC4D0849A289.gr7.ap-south-1.eks.amazonaws.com'
                     ) {
                         sh "kubectl apply -f mysql-ds.yml -n ${KUBE_NAMESPACE}"
                     }
@@ -102,7 +102,7 @@ pipeline {
                         credentialsId: 'k8-token',
                         clusterName: 'gtr-cluster',
                         namespace: "${KUBE_NAMESPACE}",
-                        serverUrl: 'https://46743932FDE6B34C74566F392E30CABA.gr7.ap-south-1.eks.amazonaws.com'
+                        serverUrl: 'https://7BE9B326E0B0EB9D25FECC4D0849A289.gr7.ap-south-1.eks.amazonaws.com'
                     ) {
                         sh """
                             if ! kubectl get svc bankapp-service -n ${KUBE_NAMESPACE}; then
@@ -122,7 +122,7 @@ pipeline {
                         credentialsId: 'k8-token',
                         clusterName: 'gtr-cluster',
                         namespace: "${KUBE_NAMESPACE}",
-                        serverUrl: 'https://46743932FDE6B34C74566F392E30CABA.gr7.ap-south-1.eks.amazonaws.com'
+                        serverUrl: 'https://7BE9B326E0B0EB9D25FECC4D0849A289.gr7.ap-south-1.eks.amazonaws.com'
                     ) {
                         sh "kubectl apply -f ${deploymentFile} -n ${KUBE_NAMESPACE}"
                     }
@@ -141,7 +141,7 @@ pipeline {
                         credentialsId: 'k8-token',
                         clusterName: 'gtr-cluster',
                         namespace: "${KUBE_NAMESPACE}",
-                        serverUrl: 'https://46743932FDE6B34C74566F392E30CABA.gr7.ap-south-1.eks.amazonaws.com'
+                        serverUrl: 'https://7BE9B326E0B0EB9D25FECC4D0849A289.gr7.ap-south-1.eks.amazonaws.com'
                     ) {
                         sh """
                             kubectl patch service bankapp-service -p '{"spec": {"selector": {"app": "bankapp", "version": "${newEnv}"}}}' -n ${KUBE_NAMESPACE}
@@ -160,7 +160,7 @@ pipeline {
                         credentialsId: 'k8-token',
                         clusterName: 'gtr-cluster',
                         namespace: "${KUBE_NAMESPACE}",
-                        serverUrl: 'https://46743932FDE6B34C74566F392E30CABA.gr7.ap-south-1.eks.amazonaws.com'
+                        serverUrl: 'https://7BE9B326E0B0EB9D25FECC4D0849A289.gr7.ap-south-1.eks.amazonaws.com'
                     ) {
                         sh """
                             kubectl get pods -l version=${verifyEnv} -n ${KUBE_NAMESPACE}
