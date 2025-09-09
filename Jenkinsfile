@@ -12,7 +12,6 @@ pipeline {
         TAG = "${params.DOCKER_TAG}"
         KUBE_NAMESPACE = 'webapps'
         SCANNER_HOME = tool 'sonar-scanner'
-        KUBE_NAMESPACES = 'webapps'
     }
 
     tools {
@@ -20,6 +19,7 @@ pipeline {
     }
 
     stages {
+
         stage('Git Checkout') {
             steps {
                 git branch: 'main', credentialsId: 'git-token', url: 'https://github.com/Rakshithgt/blue-green-deployment.git'
@@ -42,13 +42,20 @@ pipeline {
             steps {
                 withSonarQubeEnv('sonar') {
                     sh """
-                        ${SCANNER_HOME}/bin/sonar-scanner \
-                            -Dsonar.projectKey=nodejsmysql \
-                            -Dsonar.projectName=nodejsmysql \
-                            -Dsonar.sources=. \
+                        ${SCANNER_HOME}/bin/sonar-scanner \\
+                            -Dsonar.projectKey=nodejsmysql \\
+                            -Dsonar.projectName=nodejsmysql \\
+                            -Dsonar.sources=. \\
                             -X
                     """
+                }
+            }
+        }
 
+        stage('SonarQube Quality Gate') {
+            steps {
+                timeout(time: 2, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
                 }
             }
         }
@@ -82,7 +89,12 @@ pipeline {
         stage('Deploy MySQL Deployment and Service') {
             steps {
                 script {
-                    withKubeConfig(credentialsId: 'k8-token', clusterName: 'gtr-cluster', namespace: 'webapps', serverUrl: 'https://46743932FDE6B34C74566F392E30CABA.gr7.ap-south-1.eks.amazonaws.com') {
+                    withKubeConfig(
+                        credentialsId: 'k8-token',
+                        clusterName: 'gtr-cluster',
+                        namespace: "${KUBE_NAMESPACE}",
+                        serverUrl: 'https://46743932FDE6B34C74566F392E30CABA.gr7.ap-south-1.eks.amazonaws.com'
+                    ) {
                         sh "kubectl apply -f mysql-ds.yml -n ${KUBE_NAMESPACE}"
                     }
                 }
@@ -92,7 +104,12 @@ pipeline {
         stage('Deploy SVC-APP') {
             steps {
                 script {
-                    withKubeConfig(credentialsId: 'k8-token', clusterName: 'gtr-cluster', namespace: 'webapps', serverUrl: 'https://46743932FDE6B34C74566F392E30CABA.gr7.ap-south-1.eks.amazonaws.com') {
+                    withKubeConfig(
+                        credentialsId: 'k8-token',
+                        clusterName: 'gtr-cluster',
+                        namespace: "${KUBE_NAMESPACE}",
+                        serverUrl: 'https://46743932FDE6B34C74566F392E30CABA.gr7.ap-south-1.eks.amazonaws.com'
+                    ) {
                         sh """
                             if ! kubectl get svc bankapp-service -n ${KUBE_NAMESPACE}; then
                                 kubectl apply -f bankapp-service.yml -n ${KUBE_NAMESPACE}
@@ -107,7 +124,12 @@ pipeline {
             steps {
                 script {
                     def deploymentFile = params.DEPLOY_ENV == 'blue' ? 'app-deployment-blue.yml' : 'app-deployment-green.yml'
-                    withKubeConfig(credentialsId: 'k8-token', clusterName: 'gtr-cluster', namespace: 'webapps', serverUrl: 'https://46743932FDE6B34C74566F392E30CABA.gr7.ap-south-1.eks.amazonaws.com') {
+                    withKubeConfig(
+                        credentialsId: 'k8-token',
+                        clusterName: 'gtr-cluster',
+                        namespace: "${KUBE_NAMESPACE}",
+                        serverUrl: 'https://46743932FDE6B34C74566F392E30CABA.gr7.ap-south-1.eks.amazonaws.com'
+                    ) {
                         sh "kubectl apply -f ${deploymentFile} -n ${KUBE_NAMESPACE}"
                     }
                 }
@@ -121,12 +143,17 @@ pipeline {
             steps {
                 script {
                     def newEnv = params.DEPLOY_ENV
-                    withKubeConfig(credentialsId: 'k8-token', clusterName: 'gtr-cluster', namespace: 'webapps', serverUrl: 'https://46743932FDE6B34C74566F392E30CABA.gr7.ap-south-1.eks.amazonaws.com') {
+                    withKubeConfig(
+                        credentialsId: 'k8-token',
+                        clusterName: 'gtr-cluster',
+                        namespace: "${KUBE_NAMESPACE}",
+                        serverUrl: 'https://46743932FDE6B34C74566F392E30CABA.gr7.ap-south-1.eks.amazonaws.com'
+                    ) {
                         sh """
                             kubectl patch service bankapp-service -p '{"spec": {"selector": {"app": "bankapp", "version": "${newEnv}"}}}' -n ${KUBE_NAMESPACE}
                         """
                     }
-                    echo "Traffic has been switched to the ${newEnv} environment."
+                    echo "✅ Traffic has been switched to the '${newEnv}' environment."
                 }
             }
         }
@@ -135,7 +162,12 @@ pipeline {
             steps {
                 script {
                     def verifyEnv = params.DEPLOY_ENV
-                    withKubeConfig(credentialsId: 'k8-token', clusterName: 'gtr-cluster', namespace: 'webapps', serverUrl: 'https://46743932FDE6B34C74566F392E30CABA.gr7.ap-south-1.eks.amazonaws.com') {
+                    withKubeConfig(
+                        credentialsId: 'k8-token',
+                        clusterName: 'gtr-cluster',
+                        namespace: "${KUBE_NAMESPACE}",
+                        serverUrl: 'https://46743932FDE6B34C74566F392E30CABA.gr7.ap-south-1.eks.amazonaws.com'
+                    ) {
                         sh """
                             kubectl get pods -l version=${verifyEnv} -n ${KUBE_NAMESPACE}
                             kubectl get svc bankapp-service -n ${KUBE_NAMESPACE}
